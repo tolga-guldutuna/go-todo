@@ -8,8 +8,8 @@ import (
 type Service interface {
 	GetTodos(ctx context.Context) ([]Todo, error)
 	GetTodo(ctx context.Context, id int) (*Todo, error)
-	AddTodo(ctx context.Context, title string) (*Todo, error)
-	UpdateTodo(ctx context.Context, id int, title string, done bool) (*Todo, error)
+	AddTodo(ctx context.Context, title, description string) (*Todo, error)
+	UpdateTodo(ctx context.Context, id int, title, description string, done bool) (*Todo, error)
 	DeleteTodo(ctx context.Context, id int) error
 }
 
@@ -29,14 +29,14 @@ func (s *service) GetTodo(ctx context.Context, id int) (*Todo, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-func (s *service) AddTodo(ctx context.Context, title string) (*Todo, error) {
+func (s *service) AddTodo(ctx context.Context, title, description string) (*Todo, error) {
 	if title == "" {
 		return nil, errors.New("title cannot be empty")
 	}
-	return s.repo.Create(ctx, title)
+	return s.repo.Create(ctx, title, description)
 }
 
-func (s *service) UpdateTodo(ctx context.Context, id int, title string, done bool) (*Todo, error) {
+func (s *service) UpdateTodo(ctx context.Context, id int, title, description string, done bool) (*Todo, error) {
 	t, err := s.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -44,6 +44,9 @@ func (s *service) UpdateTodo(ctx context.Context, id int, title string, done boo
 
 	if title != "" {
 		t.Title = title
+	}
+	if description != "" {
+		t.Description = description
 	}
 	t.IsDone = done
 

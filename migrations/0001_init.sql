@@ -1,9 +1,10 @@
-CREATE TABLE IF NOT EXISTS todos.todos (
+CREATE TABLE IF NOT EXISTS todos (
     id          SERIAL PRIMARY KEY,
     title       TEXT NOT NULL,
+    description TEXT,
     is_done     BOOLEAN NOT NULL DEFAULT FALSE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_todos_is_done ON todos.todos(is_done);
+CREATE INDEX IF NOT EXISTS idx_todos_is_done ON todos(is_done);

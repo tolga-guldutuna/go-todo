@@ -23,9 +23,9 @@ func (h *Handler) RegisterRoutes(mux *http.ServeMux) {
 func (h *Handler) handleTodos(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		h.getAll(w, r)
+		h.GetAll(w, r)
 	case http.MethodPost:
-		h.create(w, r)
+		h.Create(w, r)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -46,17 +46,23 @@ func (h *Handler) handleTodoByID(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case http.MethodGet:
-		h.getOne(w, r, id)
+		h.GetOne(w, r, id)
 	case http.MethodPut:
-		h.update(w, r, id)
+		h.Update(w, r, id)
 	case http.MethodDelete:
-		h.delete(w, r, id)
+		h.Delete(w, r, id)
 	default:
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
-func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
+// GetTodos godoc
+// @Summary      List all todos
+// @Tags         todos
+// @Produce      json
+// @Success      200  {array}   Todo
+// @Router       /todos [get]
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	todos, err := h.svc.GetTodos(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -65,7 +71,14 @@ func (h *Handler) getAll(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, todos)
 }
 
-func (h *Handler) getOne(w http.ResponseWriter, r *http.Request, id int) {
+// GetTodo godoc
+// @Summary      Get todo by ID
+// @Tags         todos
+// @Produce      json
+// @Param        id   path      int   true  "Todo ID"
+// @Success      200  {object}  Todo
+// @Router       /todos/{id} [get]
+func (h *Handler) GetOne(w http.ResponseWriter, r *http.Request, id int) {
 	todo, err := h.svc.GetTodo(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -75,16 +88,25 @@ func (h *Handler) getOne(w http.ResponseWriter, r *http.Request, id int) {
 }
 
 type createTodoRequest struct {
-	Title string `json:"title"`
+	Title       string `json:"title"`
+	Description string `json:"description,omitempty"`
 }
 
-func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
+// CreateTodo godoc
+// @Summary      Create a new todo
+// @Tags         todos
+// @Accept       json
+// @Produce      json
+// @Param        todo  body      createTodoRequest  true  "Todo to create"
+// @Success      201   {object}  Todo
+// @Router       /todos [post]
+func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var req createTodoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid json", http.StatusBadRequest)
 		return
 	}
-	todo, err := h.svc.AddTodo(r.Context(), req.Title)
+	todo, err := h.svc.AddTodo(r.Context(), req.Title, req.Description)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -93,11 +115,21 @@ func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
 }
 
 type updateTodoRequest struct {
-	Title  *string `json:"title,omitempty"`
-	IsDone *bool   `json:"isDone,omitempty"`
+	Title       *string `json:"title,omitempty"`
+	Description *string `json:"description,omitempty"`
+	IsDone      *bool   `json:"isDone,omitempty"`
 }
 
-func (h *Handler) update(w http.ResponseWriter, r *http.Request, id int) {
+// UpdateTodo godoc
+// @Summary      Update a todo
+// @Tags         todos
+// @Accept       json
+// @Produce      json
+// @Param        id    path      int                true  "Todo ID"
+// @Param        todo  body      updateTodoRequest  true  "Todo to update"
+// @Success      200   {object}  Todo
+// @Router       /todos/{id} [put]
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request, id int) {
 	var req updateTodoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid json", http.StatusBadRequest)
@@ -113,11 +145,20 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request, id int) {
 	if req.Title != nil {
 		todo.Title = *req.Title
 	}
+	if req.Description != nil {
+		todo.Description = *req.Description
+	}
 	if req.IsDone != nil {
 		todo.IsDone = *req.IsDone
 	}
 
-	updated, err := h.svc.UpdateTodo(r.Context(), todo.ID, todo.Title, todo.IsDone)
+	updated, err := h.svc.UpdateTodo(
+		r.Context(),
+		todo.ID,
+		todo.Title,
+		todo.Description,
+		todo.IsDone,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -125,7 +166,13 @@ func (h *Handler) update(w http.ResponseWriter, r *http.Request, id int) {
 	writeJSON(w, http.StatusOK, updated)
 }
 
-func (h *Handler) delete(w http.ResponseWriter, r *http.Request, id int) {
+// DeleteTodo godoc
+// @Summary      Delete a todo
+// @Tags         todos
+// @Param        id   path      int  true  "Todo ID"
+// @Success      204  "No Content"
+// @Router       /todos/{id} [delete]
+func (h *Handler) Delete(w http.ResponseWriter, r *http.Request, id int) {
 	if err := h.svc.DeleteTodo(r.Context(), id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

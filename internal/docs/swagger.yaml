@@ -1,4 +1,137 @@
+basePath: /
+definitions:
+  todo.Todo:
+    properties:
+      createdAt:
+        description: TIMESTAMPTZ
+        type: string
+      description:
+        description: TEXT
+        type: string
+      id:
+        description: SERIAL → int
+        type: integer
+      isDone:
+        description: BOOLEAN
+        type: boolean
+      title:
+        description: TEXT
+        type: string
+      updatedAt:
+        description: TIMESTAMPTZ
+        type: string
+    type: object
+  todo.createTodoRequest:
+    properties:
+      description:
+        type: string
+      title:
+        type: string
+    type: object
+  todo.updateTodoRequest:
+    properties:
+      description:
+        type: string
+      isDone:
+        type: boolean
+      title:
+        type: string
+    type: object
+host: localhost:8080
 info:
   contact: {}
-paths: {}
+  description: Simple layered todo API in Go.
+  title: Go Todo API
+  version: "1.0"
+paths:
+  /todos:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/todo.Todo'
+            type: array
+      summary: List all todos
+      tags:
+      - todos
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Todo to create
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/todo.createTodoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/todo.Todo'
+      summary: Create a new todo
+      tags:
+      - todos
+  /todos/{id}:
+    delete:
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      summary: Delete a todo
+      tags:
+      - todos
+    get:
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/todo.Todo'
+      summary: Get todo by ID
+      tags:
+      - todos
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Todo ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Todo to update
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/todo.updateTodoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/todo.Todo'
+      summary: Update a todo
+      tags:
+      - todos
 swagger: "2.0"
