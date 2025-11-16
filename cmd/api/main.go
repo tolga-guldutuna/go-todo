@@ -3,31 +3,37 @@ package main
 import (
 	"context"
 	"fmt"
-	"go-todo/internal/config"
-	"go-todo/internal/db"
 	"log"
+	"net/http"
 	"time"
+
+	"github.com/tolga-guldutuna/go-todo/internal/config"
+	"github.com/tolga-guldutuna/go-todo/internal/db"
+	"github.com/tolga-guldutuna/go-todo/internal/todo"
 )
 
 func main() {
-	// context = Java'daki RequestContext/Timeout mantığına benzer.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Config yükle (.env + env var)
 	cfg := config.Load()
 
-	// DB pool oluştur
 	pool, err := db.NewPool(ctx, cfg.DB_DSN)
 	if err != nil {
-		log.Fatalf("DB bağlantısı kurulamadı: %v", err)
+		log.Fatalf("DB connection error: %v", err)
 	}
 	defer pool.Close()
 
-	// Basit health check: SELECT 1
-	if err := pool.Ping(ctx); err != nil {
-		log.Fatalf("DB ping FAILED: %v", err)
-	}
+	// katmanlar
+	repo := todo.NewRepository(pool)
+	svc := todo.NewService(repo)
+	handler := todo.NewHandler(svc)
 
-	fmt.Println("✅ PostgreSQL bağlantısı başarılı!")
+	mux := http.NewServeMux()
+	handler.RegisterRoutes(mux)
+
+	fmt.Println("✅ API listening on", cfg.Addr)
+	if err := http.ListenAndServe(cfg.Addr, mux); err != nil {
+		log.Fatalf("server error: %v", err)
+	}
 }
